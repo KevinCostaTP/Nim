@@ -166,7 +166,7 @@ class NimAI():
             
 
         
-        raise NotImplementedError
+        
 
 
 def train(n):

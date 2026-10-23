@@ -11,8 +11,21 @@ class NimGUI:
         self.status_label = tk.Label(root, text="A treinar a IA, aguarde...", font=("Arial", 14))
         self.status_label.pack(pady=10)
 
-        self.board_frame = tk.Frame(root)
-        self.board_frame.pack(pady=10)
+        # Contentor horizontal: tabuleiro à esquerda, histórico à direita
+        self.content_frame = tk.Frame(root)
+        self.content_frame.pack(pady=10)
+
+        self.board_frame = tk.Frame(self.content_frame)
+        self.board_frame.pack(side="left", padx=10, anchor="n")
+
+        self.history_frame = tk.Frame(self.content_frame)
+        self.history_frame.pack(side="left", padx=10, anchor="n")
+
+        history_label = tk.Label(self.history_frame, text="Histórico:", font=("Arial", 12, "bold"))
+        history_label.pack(anchor="w")
+
+        self.history_text = tk.Text(self.history_frame, width=30, height=15, state="disabled")
+        self.history_text.pack()
 
         self.play_again_button = None
         self.ai = None
@@ -20,7 +33,6 @@ class NimGUI:
         self.human_player = None
         self.squares = []
 
-        # Pequeno atraso para a janela desenhar antes de começar o treino
         self.root.after(100, self.start_training)
 
     def start_training(self):
@@ -32,12 +44,25 @@ class NimGUI:
         """Cria um novo jogo, escolhe quem começa aleatoriamente e desenha o tabuleiro."""
         self.human_player = random.randint(0, 1)
         self.game = Nim()
+        self.clear_history()
         self.draw_board()
         self.update_status()
 
-        # Se a IA começar, é ela quem joga primeiro
         if self.game.player != self.human_player:
             self.root.after(1000, self.ai_move)
+
+    def clear_history(self):
+        """Limpa o histórico de jogadas (chamado ao iniciar um novo jogo)."""
+        self.history_text.config(state="normal")
+        self.history_text.delete("1.0", tk.END)
+        self.history_text.config(state="disabled")
+
+    def log_move(self, text):
+        """Adiciona uma linha ao histórico de jogadas."""
+        self.history_text.config(state="normal")
+        self.history_text.insert(tk.END, text + "\n")
+        self.history_text.see(tk.END)  # scroll automático para a última linha
+        self.history_text.config(state="disabled")
 
     def draw_board(self):
         """Redesenha todas as pilhas como linhas de quadrados clicáveis."""
@@ -73,6 +98,7 @@ class NimGUI:
 
         count = self.game.piles[pile_index] - position
         self.game.move((pile_index, count))
+        self.log_move(f"Tu: tiraste {count} da pilha {pile_index}")
         self.draw_board()
         self.update_status()
 
@@ -88,6 +114,7 @@ class NimGUI:
 
         pile, count = self.ai.choose_action(self.game.piles, epsilon=False)
         self.game.move((pile, count))
+        self.log_move(f"IA: tirou {count} da pilha {pile}")
         self.draw_board()
         self.status_label.config(text=f"A IA tirou {count} da pilha {pile}.")
 

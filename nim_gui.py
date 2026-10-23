@@ -11,7 +11,7 @@ class NimGUI:
         self.status_label = tk.Label(root, text="A treinar a IA, aguarde...", font=("Arial", 14))
         self.status_label.pack(pady=10)
 
-        # Contentor horizontal: tabuleiro à esquerda, histórico à direita
+        # Contentor horizontal: tabuleiro à esquerda, histórico + análise à direita
         self.content_frame = tk.Frame(root)
         self.content_frame.pack(pady=10)
 
@@ -26,6 +26,16 @@ class NimGUI:
 
         self.history_text = tk.Text(self.history_frame, width=30, height=15, state="disabled")
         self.history_text.pack()
+
+        # Secção de análise da IA, logo abaixo do histórico, no mesmo painel
+        analysis_label = tk.Label(self.history_frame, text="Análise da IA:", font=("Arial", 12, "bold"))
+        analysis_label.pack(anchor="w", pady=(10, 0))
+
+        self.analysis_label = tk.Label(
+            self.history_frame, text="(ainda sem jogadas da IA)",
+            wraplength=200, justify="left", anchor="w"
+        )
+        self.analysis_label.pack(anchor="w")
 
         self.play_again_button = None
         self.ai = None
@@ -45,6 +55,7 @@ class NimGUI:
         self.human_player = random.randint(0, 1)
         self.game = Nim()
         self.clear_history()
+        self.analysis_label.config(text="(ainda sem jogadas da IA)")
         self.draw_board()
         self.update_status()
 
@@ -112,7 +123,15 @@ class NimGUI:
         if self.game.winner is not None:
             return
 
-        pile, count = self.ai.choose_action(self.game.piles, epsilon=False)
+        # Guarda o estado ANTES da jogada, pois o Q-value é relativo a esse estado
+        state_before = self.game.piles.copy()
+        pile, count = self.ai.choose_action(state_before, epsilon=False)
+        value = self.ai.get_q_value(state_before, (pile, count))
+
+        self.analysis_label.config(
+            text=f"Escolheu tirar {count} da pilha {pile}\n(valor: {value:.2f})"
+        )
+
         self.game.move((pile, count))
         self.log_move(f"IA: tirou {count} da pilha {pile}")
         self.draw_board()
